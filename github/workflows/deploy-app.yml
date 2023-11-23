@@ -1,0 +1,30 @@
+name: Deploy App Template
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+    secrets:
+      host:
+        required: true
+      user:
+        required: true
+      key:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.host }}
+          username: ${{ secrets.user }}
+          key: ${{ secrets.key }}
+          script: |
+            cd /home/${{ secrets.user }}/app
+            git pull origin ${{ inputs.branch }}
+            sudo docker-compose up --build -d --remove-orphans

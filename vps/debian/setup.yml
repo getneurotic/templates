@@ -1,0 +1,61 @@
+---
+- name: Setup Environment
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install necessary packages
+      apt:
+        name:
+          - docker.io
+          - git
+          - openssh-client
+          - zip
+          - unzip
+        state: present
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_machine }}"
+        dest: /usr/local/bin/docker-compose
+        mode: 'u+x,g+x'
+      vars:
+        docker_compose_version: "2.5.0"
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Ensure SSH directory exists
+      file:
+        path: "{{ ansible_env.HOME }}/.ssh"
+        state: directory
+        mode: '0700'
+
+    - name: Generate SSH keys for Github Actions
+      community.crypto.openssh_keypair:
+        path: "{{ ansible_env.HOME }}/.ssh/github_action_key"
+        type: rsa
+        size: 4096
+        comment: "your_email@example.com"
+      when: not ansible_env.HOME ~ "/.ssh/github_action_key.pub"
+      register: ssh_key
+
+    - name: Add public key to authorized_keys
+      authorized_key:
+        user: "{{ ansible_user_id }}"
+        state: present
+        key: "{{ lookup('file', ansible_env.HOME ~ '/.ssh/github_action_key.pub') }}"
+      when: ssh_key is defined
+
+    - name: Display private key instructions
+      debug:
+        msg: "Run `cat ~/.ssh/github_action_key` for private key."
+      when: ssh_key is defined
