@@ -28,3 +28,4 @@ jobs:
             cd /home/${{ secrets.user }}/app
             git pull origin ${{ inputs.branch }}
             sudo docker-compose -p app-develop up --build -d --remove-orphans
+            sudo docker restart app
