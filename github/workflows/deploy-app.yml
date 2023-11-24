@@ -27,4 +27,4 @@ jobs:
           script: |
             cd /home/${{ secrets.user }}/app
             git pull origin ${{ inputs.branch }}
-            sudo docker-compose up --build -d --remove-orphans
+            sudo docker-compose -p app-develop up --build -d --remove-orphans
